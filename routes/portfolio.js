@@ -1,12 +1,13 @@
-import { Router } from "express";
-import {
-  getPortfolio,
-  getReturns
-} from "../controllers/PortfolioController";
-const router = Router();
+const express = require("express");
+const portController = require("../controllers/PortfolioController");
+const router = express.Router();
 
 //Getting portfolio
-router.get("/portfolio", getPortfolio);
+router.get("/portfolio", portController.getPortfolio);
 
 //Getting returns
-router.get("/returns", getReturns);
+router.get("/returns", portController.getReturns);
+
+router.get("/holdings", portController.getHoldings);
+
+module.exports = router;

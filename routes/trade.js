@@ -12,3 +12,5 @@ router.put("/:id", controller.updateTrade);
 
 //Removing a trade
 router.delete("/:id", controller.removeTrade);
+
+module.exports = router;
