@@ -1,6 +1,6 @@
-import { Schema, model } from 'mongoose';
+const mongoose = require('mongoose');
 
-const tradeSchema = new Schema({
+const tradeSchema = new mongoose.Schema({
       tickerSymbol: {
             type: String,
             required: true,
@@ -24,4 +24,4 @@ const tradeSchema = new Schema({
       }
 });
 
-export default model('Trade',tradeSchema);
+module.exports = mongoose.model('Trade',tradeSchema);
