@@ -1,7 +1,7 @@
 //all actions for trade routed apis - post, put, delete
 
-import Trade from "../models/Trade";
-import Portfolio from "../models/Portfolio";
+const Trade = require("../models/Trade");
+const Portfolio = require("../models/Portfolio");
 
 //adding a new trade
 const createTrade = (tickerSymbol, price, quantity, action) => {
@@ -56,12 +56,12 @@ const removePortfolioTrade = async (trade, portfolio) => {
 
 const addPortfolioTrade = async (trade, portfolio) => {
       if (trade.action === 'BUY') {
-        portfolio = await buyAction(portfolio, trade.quantity, trade.price);
-        return portfolio;
+            portfolio = await buyAction(portfolio, trade.quantity, trade.price);
+            return portfolio;
       }
       portfolio = await sellAction(portfolio, trade.quantity);
       return portfolio;
-    };
+};
 
 module.exports = {
       addTrade: async (req, res) => {
@@ -133,7 +133,7 @@ module.exports = {
                   if (!portfolio) {
                         portfolio = await addPortfolioTicker(tickerSymbol, 0, 0);
                   }
-                  if(action === "BUY") {
+                  if (action === "BUY") {
                         portfolio = await buyAction(portfolio, price, quantity);
                         trade.tickerSymbol = tickerSymbol;
                         trade.quantity = quantity;
@@ -142,7 +142,7 @@ module.exports = {
                         trade = await trade.save();
                         return res.status(200).body(trade);
                   }
-                  if(portfolio.quantity - quantity >=0) {
+                  if (portfolio.quantity - quantity >= 0) {
                         portfolio = await sellAction(portfolio, quantity);
                         trade.tickerSymbol = tickerSymbol;
                         trade.quantity = quantity;
@@ -153,11 +153,45 @@ module.exports = {
                   }
                   portfolio = await addPortfolioTrade(trade, portfolio);
                   return res.status(400).body('Not enough shares to update the trade');
-                  
+
             }
 
             //case when only quantity or price is changed
-
-
+            const qtyChange = quantity - trade.quantity;
+            if (qtyChange === 0 && trade.price === price) {
+                  return res.status(400).body("No change in the trade details");
+            }
+            let portfolio = await Portfolio.findOne({ tickerSymbol: trade.tickerSymbol });
+            if (action === "BUY") {
+                  if (qtyChange < 0 && portfolio.quantity - qtyChange < 0) {
+                        return res.status(403).body("This trade can no longer be changed");
+                  }
+                  portfolio.avgPrice = (portfolio.avgPrice * portfolio.quantity - trade.quantity * trade.price) / (portfolio.quantity - trade.quantity);
+                  portfolio.avgPrice = (portfolio.avgPrice * (portfolio.quantity - trade.quantity) + price * quantity) / (portfolio.quantity + qtyChange);
+                  if (qtyChange === 0) {
+                        portfolio = await portfolio.save();
+                  } else if (qtyChange > 0) {
+                        portfolio.quantity = portfolio.quantity + qtyChange;
+                        portfolio = await portfolio.save();
+                  } else {
+                        portfolio.quantity = portfolio.quantity + Math.abs(qtyChange);
+                        portfolio = await portfolio.save();
+                  }
+            } else {
+                  if(qtyChange > 0 && portfolio.quantity - Math.abs(qtyChange) < 0) {
+                        return res.status(403).body("This trade can no longer be changed");
+                  }
+                  else if(qtyChange > 0) {
+                        portfolio.quantity = portfolio.quantity - qtyChange;
+                        portfolio = await portfolio.save();
+                  } else {
+                        portfolio.quantity = portfolio.quantity + Math.abs(qtyChange);
+                        portfolio = await portfolio.save();
+                  }
+            }
+            trade.quantity = quantity;
+            trade.price = price;
+            trade = await trade.save();
+            return res.status(200).body(trade);
       }
 }

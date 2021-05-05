@@ -1,12 +1,14 @@
-const express = require("express");
+const controller = require('../controllers/TradeController');
 
+
+const express = require("express");
 const router = express.Router();
 
 //Adding a trade
-router.post('/',);
+router.post("/", controller.addTrade);
 
 //Updating a trade
-router.put();
+router.put("/:id", controller.updateTrade);
 
 //Removing a trade
-router.delete();
+router.delete("/:id", controller.removeTrade);
